@@ -4,7 +4,7 @@ remote_user = {{ ansible_account }}
 ask_pass = false
 collections_path = ./collections:/home/{{ ansible_account }}/collections:/home/{{ ansible_account }}/.ansible/collections:/usr/share/ansible/collections
 
-[privilege escalation]
+[privilege_escalation]
 become = true
 become_method = sudo
 become_user = root
