@@ -1,0 +1,72 @@
+---
+- name: Set up FTP on localhost to temporarily provide repo files until autofs and nfs-utils can be installed
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Install vsftpd
+      dnf:
+        name: vsftpd
+        state: present
+
+    - name: Start the vsftpd service
+      service:
+        name: vsftpd
+        state: started
+        enabled: true
+
+    - name: Open firewall rules for FTP traffic
+      firewalld:
+        service: ftp
+        state: enabled
+        permanent: true
+        immediate: true
+
+    - name: Configure /var/ftp/homelab_repo
+      synchronize:
+        src: /homelab_repo
+        dest: /var/ftp
+
+    - name: Configure /etc/vsftpd/vsftpd.conf
+      lineinfile:
+        path: /etc/vsftpd/vsftpd.conf
+        regexp: '^anonymous_enable'
+        line: 'anonymous_enable=YES'
+      notify:
+        - restart_vsftpd
+
+    - name: Open firewall rules for FTP traffic
+      firewalld:
+        service: ftp
+        state: enabled
+        immediate: true
+        permanent: true
+
+  handlers:
+    - name: restart_vsftpd
+      service:
+        name: vsftpd
+        state: restarted
+          
+
+- name: Configure repository on remote servers
+  hosts: all
+  tasks:
+    - name: Configure FTP repository
+      yum_repository:
+        name: "{{ item }}"
+        description: Control node temp repo for "{{ item }}"
+        file: "{{ item }}"
+        baseurl: ftp://control.example.local/homelab_repo/{{ item }}
+        gpgcheck: no
+      loop:
+        - AppStream
+        - BaseOS
+
+
+
+
+
+
+
+
+

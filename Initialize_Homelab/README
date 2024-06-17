@@ -1,0 +1,37 @@
+REQUIREMENTS:
+
+  - Control Node
+    Name   : control
+    Type   : GUI or Minimal
+    Disk 1 : 30 GB
+    Disk 2 : 20 GB
+    CPU    : 2 - 4 GB
+    RAM    : 4
+    IPv4   : 10.211.55.100
+
+  - Managed Hosts
+    Name   : server1, server2
+    Type   : Minimal
+    Disk 1 : 20 GB
+    CPU    : 2
+    RAM    : 4 GB
+    IPv4   : 10.211.55.101-102
+
+
+______________________________
+
+
+Core Tasks:
+- Break out tasks from main.yml to make the project more modular and manageable
+- Re-evaluate variables and reorganize
+- Utilize ansible-vault for user creation and other sensitive data
+
+
+Playbook Tasks
+- register_host_local.yml
+- register_host_remote.yml
+
+
+Playbook Breakout
+- configure_repo_local.yml
+- configure_user_ansible.yml

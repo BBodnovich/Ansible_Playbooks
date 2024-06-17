@@ -1,0 +1,137 @@
+---
+- name: Set up local repository on ansible controller host
+  hosts: localhost
+  tasks:
+  - name: Mount RHEL installation iso
+    mount:
+      src: /dev/sr0
+      path: /mnt
+      fstype: iso9660
+      opts: ro
+      state: mounted
+
+  - name: Create /homelab_repo directory to store repository files
+    file:
+      path: /homelab_repo
+      state: directory
+
+  - name: Copy repository files from RHEL installation iso  to /homelab_repo
+    synchronize:
+      src: /mnt/{{ item }}
+      dest: /homelab_repo/
+    loop:
+      - AppStream
+      - BaseOS
+
+  - name: Enable repository on control node
+    yum_repository:
+      name: "{{ item }}"
+      description:  Homelab {{ item }} Local Repo
+      baseurl: file:///homelab_repo/{{ item }}
+      gpgcheck: false
+    loop:
+      - AppStream
+      - BaseOS
+
+  - name: Unmount an ISO
+    mount:
+      path: /mnt
+      state: unmounted
+
+- name: Create ansible management account on localhost and managed hosts
+  hosts:
+    - localhost
+    - all
+  vars_files:
+    - vars/control_setup
+  tasks:
+    - name: Use user to create user ansible
+      user:
+        name: "{{ ansible_account }}"
+        create_home: true
+
+    - name: Use shell to set user ansible password
+      shell: echo {{ ansible_secret }} | passwd --stdin {{ ansible_account }}
+    
+    - name: Use copy to set ansible sudo rights
+      copy:
+        content: "{{ ansible_account}} ALL=(ALL) NOPASSWD: ALL"
+        dest: /etc/sudoers.d/{{ ansible_account }}
+        owner: root
+        group: root
+        mode: '0440'
+
+- name: Generate SSH key pair for managed host connections for ansible account
+  hosts: localhost
+  vars_files:
+    - vars/control_setup
+  tasks:
+
+    - name: Verify .ssh directory exists
+      file:
+        path: /home/{{ ansible_account }}/.ssh
+        state: directory
+        mode: '0700'
+        owner: "{{ ansible_account }}"
+        group: "{{ ansible_account }}"
+
+    - name: Check if SSH key pair exists
+      stat:
+        path: "{{ ansible_ssh_key_file }}"
+      register: keypair_check
+
+    - name: Generate SSH key pair for ansible account
+      shell: ssh-keygen -t rsa -C "{{ ansible_ssh_key_comment }}" -f "{{ ansible_ssh_key_file }}" -N ""
+      when: not keypair_check.stat.exists
+
+    - name: Set private and public key ownership for created keys
+      file:
+        path: "{{ item }}"
+        owner: "{{ ansible_account }}"
+        group: "{{ ansible_account }}"
+      loop:
+        - "{{ ansible_ssh_key_file }}"
+        - "{{ ansible_ssh_key_file }}.pub"
+
+- name: Share SSH key pairs for user ansible to managed hosts
+  hosts: all
+  vars_files:
+    - vars/control_setup
+  remote_user: ansible
+  tasks:
+    - name: Set authorized keys taken from file
+      authorized_key:
+        user: ansible
+        state: present
+        key: "{{ lookup('file', '/home/ansible/.ssh/id_rsa.pub') }}"
+
+- name: Create and populate /home/ansible/ working directory
+  hosts: localhost
+  vars_files:
+    - vars/control_setup
+  tasks:
+    - name: Create directory /home/{{ ansible_account }}
+      file:
+        path: /home/{{ ansible_account }}
+        state: directory
+        mode: '0755'
+
+    - name: Create /home/ansible/ansible.cfg
+      template:
+        src: templates/ansible_config.j2
+        dest: /home/ansible/ansible.cfg
+
+    - name: Create /home/{{ ansible_account }}/inventory
+      template:
+        src: templates/ansible_inventory.j2
+        dest: /home/{{ ansible_account }}/inventory
+
+    - name: Recursively change ownership to ansible account for all created items
+      file:
+        path: /home/{{ ansible_account }}/
+        owner: "{{ ansible_account }}"
+        group: "{{ ansible_account }}"
+        recurse: true
+
+- import_playbook: tasks/configure_repo_ftp.yml
+- import_playbook: tasks/configure_repo_nfs.yml

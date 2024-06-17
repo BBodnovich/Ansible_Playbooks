@@ -1,0 +1,109 @@
+---
+- name: Setup NFS server on ansible control node
+  hosts: localhost
+  tasks:
+    - name: Install NFS server
+      dnf:
+        name: nfs-utils
+        state: latest
+    - name: Start and enable nfs-server service
+      service:
+        name: nfs-server
+        state: started
+        enabled: true
+    - name: Set up /etc/exports to export local repo /homelab_repo
+      lineinfile:
+        path: /etc/exports
+        state: present
+        line: '/homelab_repo *(rw,no_root_squash)'
+      notify: restart_vsftpd
+    - name: Enable NFS services on firewall
+      firewalld:
+        service: "{{ item }}"
+        state: enabled
+        permanent: true
+        immediate: true
+      loop:
+        - rpc-bind
+        - mountd
+        - nfs
+  handlers:
+    - name: restart_vsftpd
+      service:
+        name: vsftpd
+        state: restarted
+
+- name: Set up automount on managed hosts
+  hosts: all
+  become: true
+  tasks:
+    - name: Install autofs and nfs-utils
+      dnf:
+        name:
+          - autofs
+          - nfs-utils
+        state: present
+
+    - name: Start and enable autofs
+      service:
+        name: autofs
+        state: started
+        enabled: true
+
+    - name: Create /repo
+      file:
+        path: /repo
+        state: directory
+
+    - name: Configure /etc/auto.master
+      lineinfile:
+        path: /etc/auto.master
+        state: present
+        line: '/repo /etc/auto.repo'
+      notify: restart_autofs
+
+    - name: Configure /etc/auto.repo
+      blockinfile:
+        path: /etc/auto.repo
+        state: present
+        create: true
+        block: |
+          AppStream    -rw    10.211.55.100:/homelab_repo/AppStream
+          BaseOS       -rw    10.211.55.100:/homelab_repo/BaseOS
+      notify: restart_autofs
+
+    - name: Enable repository NFS shared repository on managed hosts
+      yum_repository:
+        name: "{{ item }}"
+        description: Control Node NFS Repo
+        baseurl: file:///repo/{{ item }}
+        gpgcheck: false
+      loop:
+        - AppStream
+        - BaseOS
+
+  handlers:
+    - name: restart_autofs
+      service:
+        name: autofs
+        state: restarted
+
+# THIS SECTION IS ONLY AGAINST configure_repo_ftp.yml
+- name: Remove previous repo set up with FTP
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Remove vsftpd
+      dnf:
+        name: vsftpd
+        state: absent
+    - name: Remove /var/ftp/homelab_repo
+      file:
+        path: /var/ftp/homelab_repo
+        state: absent
+    - name: Turn off FTP firewall rules
+      firewalld:
+        service: ftp
+        state: disabled
+        immediate: yes
+        permanent: yes 
