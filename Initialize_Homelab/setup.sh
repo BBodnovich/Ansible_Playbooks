@@ -21,6 +21,6 @@ umount /dev/sr0
 for i in AppStream BaseOS; do rm -rf /etc/yum.repos.d/mnt/$i.repo; done
 
 # Start Ansible Setup
-ansible-galaxy collection install -r ../requirements.yml -p ../collections
-chown -R tech:tech ../collections
-sudo ansible-playbook -k -K ../main.yml
+ansible-galaxy collection install -r ./requirements.yml -p ./collections
+chown -R tech:tech ./collections
+sudo ansible-playbook -k -K ./main.yml

@@ -23,7 +23,7 @@ ______________________________
 
 INITIAL SETUP:
 - Run 'scripts/requirements.sh'
-- Run 'sudo scripts/setup.sh'
+- Run 'sudo setup.sh'
 
 
 ______________________________
