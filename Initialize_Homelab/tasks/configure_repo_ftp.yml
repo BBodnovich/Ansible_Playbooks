@@ -21,9 +21,9 @@
         permanent: true
         immediate: true
 
-    - name: Configure /var/ftp/homelab_repo
+    - name: Configure /var/ftp/repo
       synchronize:
-        src: /homelab_repo
+        src: /repo
         dest: /var/ftp
 
     - name: Configure /etc/vsftpd/vsftpd.conf
@@ -56,7 +56,7 @@
         name: "{{ item }}"
         description: Control node temp repo for "{{ item }}"
         file: "{{ item }}"
-        baseurl: ftp://control.example.local/homelab_repo/{{ item }}
+        baseurl: ftp://control.example.local/repo/{{ item }}
         gpgcheck: no
       loop:
         - AppStream

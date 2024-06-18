@@ -1,0 +1,39 @@
+---
+- name: Set up local repository on ansible controller host
+  hosts: localhost
+  tasks:
+  - name: Mount RHEL installation iso
+    mount:
+      src: /dev/sr0
+      path: /mnt
+      fstype: iso9660
+      opts: ro
+      state: mounted
+
+  - name: Create /repo directory to store repository files
+    file:
+      path: /repo
+      state: directory
+
+  - name: Copy repository files from RHEL installation iso  to /repo
+    synchronize:
+      src: /mnt/{{ item }}
+      dest: /repo/
+    loop:
+      - AppStream
+      - BaseOS
+
+  - name: Enable repository on control node
+    yum_repository:
+      name: "{{ item }}"
+      description:  Homelab {{ item }} Local Repo
+      baseurl: file:///repo/{{ item }}
+      gpgcheck: false
+    loop:
+      - AppStream
+      - BaseOS
+
+  - name: Unmount an ISO
+    mount:
+      path: /mnt
+      state: unmounted

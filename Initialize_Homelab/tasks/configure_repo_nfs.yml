@@ -11,12 +11,12 @@
         name: nfs-server
         state: started
         enabled: true
-    - name: Set up /etc/exports to export local repo /homelab_repo
+    - name: Set up /etc/exports to export local repo /repo
       lineinfile:
         path: /etc/exports
         state: present
-        line: '/homelab_repo *(rw,no_root_squash)'
-      notify: restart_vsftpd
+        line: '/repo *(rw,no_root_squash)'
+      notify: restart_nfs
     - name: Enable NFS services on firewall
       firewalld:
         service: "{{ item }}"
@@ -28,9 +28,9 @@
         - mountd
         - nfs
   handlers:
-    - name: restart_vsftpd
+    - name: restart_nfs
       service:
-        name: vsftpd
+        name: nfs-server
         state: restarted
 
 - name: Set up automount on managed hosts
@@ -68,8 +68,8 @@
         state: present
         create: true
         block: |
-          AppStream    -rw    10.211.55.100:/homelab_repo/AppStream
-          BaseOS       -rw    10.211.55.100:/homelab_repo/BaseOS
+          AppStream    -rw    10.211.55.100:/repo/AppStream
+          BaseOS       -rw    10.211.55.100:/repo/BaseOS
       notify: restart_autofs
 
     - name: Enable repository NFS shared repository on managed hosts
@@ -97,9 +97,9 @@
       dnf:
         name: vsftpd
         state: absent
-    - name: Remove /var/ftp/homelab_repo
+    - name: Remove /var/ftp/repo
       file:
-        path: /var/ftp/homelab_repo
+        path: /var/ftp/repo
         state: absent
     - name: Turn off FTP firewall rules
       firewalld:
