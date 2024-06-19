@@ -1,21 +1,21 @@
 REQUIREMENTS:
 
   - Control Node
-    Name   : control
-    Type   : GUI or Minimal
-    Disk 1 : 30 GB
-    Disk 2 : 20 GB
-    CPU    : 2 - 4 GB
-    RAM    : 4
-    IPv4   : 10.211.55.100
+    Name      :    control
+    Type      :    GUI or Minimal
+    Disk 1    :    30 GB
+    Disk 2    :    20 GB
+    CPU       :    2 - 4 GB
+    RAM       :    4
+    IPv4      :    10.211.55.100
 
   - Managed Hosts
-    Name   : server1, server2
-    Type   : Minimal
-    Disk 1 : 20 GB
-    CPU    : 2
-    RAM    : 4 GB
-    IPv4   : 10.211.55.101-102
+    Name      :    server1, server2
+    Type      :    Minimal
+    Disk 1    :    20 GB
+    CPU       :    2
+    RAM       :    4 GB
+    IPv4      :    10.211.55.101-102
 
 
 ______________________________
