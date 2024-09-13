@@ -1,0 +1,42 @@
+- name: Generate SSH key pair for managed host connections for ansible account
+  hosts: localhost
+  vars_files:
+    - vars/control_setup
+  tasks:
+    - name: Verify .ssh directory exists
+      file:
+        path: /home/{{ ansible_account }}/.ssh
+        state: directory
+        mode: '0700'
+        owner: "{{ ansible_account }}"
+        group: "{{ ansible_account }}"
+
+    - name: Check if SSH key pair exists
+      stat:
+        path: "{{ ansible_ssh_key_file }}"
+      register: keypair_check
+
+    - name: Generate SSH key pair for ansible account
+      shell: ssh-keygen -t rsa -C "{{ ansible_ssh_key_comment }}" -f "{{ ansible_ssh_key_file }}" -N ""
+      when: not keypair_check.stat.exists
+
+    - name: Set private and public key ownership for created keys
+      file:
+        path: "{{ item }}"
+        owner: "{{ ansible_account }}"
+        group: "{{ ansible_account }}"
+      loop:
+        - "{{ ansible_ssh_key_file }}"
+        - "{{ ansible_ssh_key_file }}.pub"
+      
+- name: Share SSH key pairs for user ansible to managed hosts
+  hosts: all
+  vars_files:
+    - vars/control_setup
+  remote_user: ansible
+  tasks:
+    - name: Set authorized keys taken from file
+      authorized_key:
+        user: ansible
+        state: present
+        key: "{{ lookup('file', '/home/ansible/.ssh/id_rsa.pub') }}"

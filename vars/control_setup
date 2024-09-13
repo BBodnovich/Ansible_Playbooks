@@ -7,3 +7,7 @@ ansible_password: password
 ansible_ssh_authorized_keys: /home/ansible/.ssh/authorized_keys
 ansible_ssh_key_file: /home/ansible/.ssh/id_rsa
 ansible_ssh_key_comment: "Homelab Base Keypair"
+
+config_files:
+  - /home/ansible/inventory
+  - /home/ansible/ansible.cfg

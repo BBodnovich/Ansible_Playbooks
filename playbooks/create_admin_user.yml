@@ -1,0 +1,65 @@
+---
+- name: Create and configure ansible management account on local host
+  hosts: localhost
+  vars_files:
+    - vars/control_setup
+  tasks:
+    - name: Create user account on localhost
+      user:
+        name: "{{ ansible_username }}"
+        password: "{{ ansible_password | password_hash('sha512') }}"
+        create_home: true
+        generate_ssh_key: true
+    
+    - name: Copy ansible public ssh key for export to managed hosts
+      shell: 'cat /home/{{ ansible_username }}/.ssh/id_rsa.pub > {{ ansible_username }}_id_rsa.pub'
+      changed_when: false
+    
+    - name: Configure inventory
+      template:
+        src: templates/ansible_inventory.j2
+        dest: /home/{{ ansible_username }}/inventory
+        owner: "{{ ansible_username }}"
+        group: "{{ ansible_username }}"
+
+    - name: Configure ansible.cfg
+      template:
+        src: templates/ansible_config.j2
+        dest: /home/{{ ansible_username }}/ansible.cfg
+        owner: "{{ ansible_username }}"
+        group: "{{ ansible_username }}"
+        
+    - name: Configure /etc/sudoers.d/{{ ansible_username }}
+      copy:
+        content: "{{ ansible_username }} ALL=(ALL) NOPASSWD: ALL"
+        dest: /etc/sudoers.d/{{ ansible_username }}
+
+
+- name: Create and configure ansible management account on managed hosts
+  hosts: all
+  tasks:
+    - name: Create user account on managed host
+      user:
+        name: "{{ ansible_username }}"
+        password: "{{ ansible_password | password_hash('sha512') }}"
+        create_home: true
+    
+    - name: Copy ssh keys
+      authorized_key:
+        user: "{{ ansible_username }}"
+        state: present
+        key: "{{ lookup('file', '{{ ansible_username }}_id_rsa.pub') }}"
+    
+    - name: configure sudo rights
+      copy:
+        content: "{{ ansible_username }} ALL=(ALL) NOPASSWD: ALL"
+        dest: /etc/sudoers.d/{{ ansible_username }}
+
+
+- name: Remove id_rsa.pub from localhost
+  hosts: localhost
+  tasks:
+    - name: Use file to remove key
+      file:
+        path: "{{ ansible_username }}_id_rsa.pub"
+        state: absent
