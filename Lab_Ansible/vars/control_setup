@@ -2,8 +2,8 @@ admin_account: tech
 admin_ssh_key_file: /home/tech/.ssh/id_rsa
 admin_ssh_key_comment: "Homelab Base Keypair"
 
-ansible_account: ansible
-ansible_secret: password
+ansible_username: ansible
+ansible_password: password
 ansible_ssh_authorized_keys: /home/ansible/.ssh/authorized_keys
 ansible_ssh_key_file: /home/ansible/.ssh/id_rsa
 ansible_ssh_key_comment: "Homelab Base Keypair"

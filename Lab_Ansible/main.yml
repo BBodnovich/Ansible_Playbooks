@@ -1,6 +1,4 @@
 ---
-- import_playbook: tasks/configure_repo_local.yml
-
 - name: Create ansible management account on localhost and managed hosts
   hosts:
     - localhost
@@ -8,13 +6,11 @@
   vars_files:
     - vars/control_setup
   tasks:
-    - name: Use user to create user ansible
+    - name: Create ansible administration user
       user:
-        name: "{{ ansible_account }}"
+        name: "{{ ansible_username }}"
+        password: "{{ ansible_password | password_hash('sha512') }}"
         create_home: true
-
-    - name: Use shell to set user ansible password
-      shell: echo {{ ansible_secret }} | passwd --stdin {{ ansible_account }}
     
     - name: Use copy to set ansible sudo rights
       copy:
@@ -96,5 +92,5 @@
         group: "{{ ansible_account }}"
         recurse: true
 
-- import_playbook: tasks/configure_repo_ftp.yml
-- import_playbook: tasks/configure_repo_nfs.yml
+- import_playbook: playbooks/configure_repo_ftp.yml
+- import_playbook: playbooks/configure_repo_nfs.yml
