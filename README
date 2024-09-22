@@ -22,24 +22,5 @@ ______________________________
 
 
 INITIAL SETUP:
-- Run 'scripts/requirements.sh'
-- Run 'sudo setup.sh'
-
-
-______________________________
-
-
-Core Tasks:
-- Break out tasks from main.yml to make the project more modular and manageable
-- Re-evaluate variables and reorganize
-- Utilize ansible-vault for user creation and other sensitive data
-
-
-Playbook Tasks
-- register_host_local.yml
-- register_host_remote.yml
-
-
-Playbook Breakout
-- configure_repo_local.yml
-- configure_user_ansible.yml
+- Run `scripts/setup_online.sh` if you have an internet connection
+- Run `scripts/setup_offline.sh` if you do not have an internet connection
